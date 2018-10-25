@@ -1,0 +1,17 @@
+net: "dense_v2_inception.prototxt"
+test_compute_loss: true
+test_iter: 200
+test_interval: 1000
+base_lr: 0.01
+clip_gradients: 5
+momentum: 0.9
+weight_decay: 0.0005
+lr_policy: "inv"
+gamma: 0.0001
+power: 0.75
+display: 1
+max_iter: 450000
+snapshot: 1000
+snapshot_prefix: "snapshot/VOC/dense_v2_inception"
+solver_mode: GPU
+device_id: 2

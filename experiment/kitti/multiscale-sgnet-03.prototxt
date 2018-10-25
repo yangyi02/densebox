@@ -1,0 +1,977 @@
+name: "CaffeNet"
+layer  {
+  name: "data"
+  type: "FCNImageData"
+  top: "data"
+  top: "label-all"
+  fcn_image_data_param{
+  	fcn_image_data_common_param{
+
+		scale_base: 0.6
+		scale_base: 0.84
+		scale_base: 1
+		
+		scale_choose_strategy: WEIGHTED
+		scale_positive_lower_bounder: 0.8
+		scale_positive_upper_bounder: 1.25
+		scale_ignore_lower_bounder: 0.6
+		scale_ignore_upper_bounder: 1.67
+		input_height: 240
+		input_width: 240
+		heat_map_a: 4
+		heat_map_b: 2
+		out_height: 60
+		out_width:  60
+		num_anno_points_per_instance: 6
+		single_thread: false
+	}
+	
+	fcn_image_data_source_param{
+		pos_samples_source: "./cache/annotations/new_original_train_jpg.txt"
+		pos_img_folder: "./cache/train_jpg/"
+		batch_size: 50
+		shuffle: true
+	}
+	
+	fcn_image_data_reader_param{
+		scale_lower_limit: 0.8
+		scale_upper_limit: 1.25
+		roi_center_point: 4
+		standard_len_point_1: 1	
+		standard_len_point_2: 2
+		standard_len: 50 
+		mean_r: 94.7109
+		mean_g: 99.1183
+		mean_b: 95.7652
+		random_rotate_degree: 0 
+		coord_jitter: 0.5
+		random_roi_prob: 0.5
+	}
+	
+	fcn_image_data_detection_box_param{
+		min_output_pos_radius:  1
+		need_detection_loc_diff: true
+		bbox_height: 50
+		bbox_width: 50
+		bbox_size_norm_type: HEIGHT
+		bbox_point_id: 0
+		bbox_point_id: 2 
+		bbox_valid_dist_ratio: 0.2
+		bbox_loc_diff_valid_dist_ratio: 0.25
+		ignore_margin:  1
+		ignore_class_flag_id: 5
+	}
+  }
+  include: { phase: TRAIN }
+}
+
+layer  {
+  name: "data"
+  type: "FCNImageData"
+  top: "data"
+  top: "label-all"
+  fcn_image_data_param{
+  	fcn_image_data_common_param{
+
+		scale_base: 0.6
+		scale_base: 0.84
+		scale_base: 1
+		
+		scale_choose_strategy: WEIGHTED
+		scale_positive_lower_bounder: 0.8
+		scale_positive_upper_bounder: 1.25
+		scale_ignore_lower_bounder: 0.6
+		scale_ignore_upper_bounder: 1.67
+		input_height: 240
+		input_width: 240
+		heat_map_a: 4
+		heat_map_b: 2
+		out_height: 60
+		out_width:  60
+		num_anno_points_per_instance: 6
+		single_thread: false
+	}
+	
+	fcn_image_data_source_param{
+		pos_samples_source: "./cache/annotations/new_original_val_jpg.txt"
+		pos_img_folder: "./cache/train_jpg/"
+		batch_size: 10
+		shuffle: true
+	}
+	
+	fcn_image_data_reader_param{
+		scale_lower_limit: 0.8
+		scale_upper_limit: 1.25
+		roi_center_point: 4
+		standard_len_point_1: 1	
+		standard_len_point_2: 2
+		standard_len: 50 
+		mean_r: 94.7109
+		mean_g: 99.1183
+		mean_b: 95.7652
+		random_rotate_degree: 0 
+		coord_jitter: 0.5
+		random_roi_prob: 0.4
+	}
+	
+	fcn_image_data_detection_box_param{
+		min_output_pos_radius:  1
+		need_detection_loc_diff: true
+		bbox_height: 50
+		bbox_width: 50
+		bbox_size_norm_type: HEIGHT
+		bbox_point_id: 0
+		bbox_point_id: 2 
+		bbox_valid_dist_ratio: 0.2
+		bbox_loc_diff_valid_dist_ratio: 0.25
+		ignore_margin:  1
+		ignore_class_flag_id: 5
+	}
+  }
+  include: { phase: TEST }
+}
+
+
+layer{
+	name:"slice_label"
+	type:"Slice"
+	bottom:"label-all"
+	top: "label-s1-score"
+	top: "label-s2-score"
+	top: "label-s3-score"
+ 
+	top: "label-s1-ignore"
+	top: "label-s2-ignore"
+	top: "label-s3-ignore"
+ 
+	top: "label-s1-bbox"
+ 	top: "label-s2-bbox"
+	top: "label-s3-bbox"
+ 
+	slice_param{
+		slice_point: 1
+		slice_point: 2
+		slice_point: 3
+		slice_point: 4
+		slice_point: 5
+		slice_point: 6
+  	 	slice_point: 10
+		slice_point: 14
+	}
+}
+
+layer{
+	name: "mvn_data"
+	type: "Power"
+	bottom: "data"
+	top: "mvn_data"
+	power_param{
+		power: 1 
+		scale: 0.01
+		shift: 0
+	}
+}
+
+########### vgg 16 start #########
+
+layer{
+	name: "conv1"
+	type: "Convolution"
+	bottom: "mvn_data"
+	top: "conv1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 7
+	  pad: 3
+      stride: 4
+      weight_filler {
+        type: "xavier"
+ 
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer {
+  bottom: "conv1"
+  top: "conv1"
+  name: "relu1"
+  type: "ReLU"
+}
+ 
+layer{
+	name: "inception1"
+	type: "Inception"
+	bottom: "conv1"
+	top: "inception1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+		inception_column{
+			column_name: "3x3"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 72
+				kernel_size: 3
+				stride:2
+                                pad: 1
+			}
+		}
+		inception_column{
+			column_name: "5x5"
+			convolution_param{
+				num_output: 16
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 32
+				kernel_size: 5
+				stride:2
+                                pad: 2
+			}
+		}
+ 
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+ 
+layer  {
+  bottom: "inception1"
+  top: "pool2"
+  name: "pool2"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 1
+	pad: 1
+  }
+}
+
+
+layer{
+	name: "inception2-1"
+	type: "Inception"
+	bottom: "pool2"
+	top: "inception2-1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+		 
+		inception_column{
+			column_name: "3x5"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 96
+				kernel_h: 3
+				kernel_w: 5
+                                pad_w: 2
+                                pad_h: 1
+				stride:1
+				group: 2
+			}
+		}
+ 
+ 
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+layer{
+	name: "inception2-2"
+	type: "Inception"
+	bottom: "inception2-1"
+	top: "inception2-2"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+		 
+		inception_column{
+			column_name: "3x5"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 96
+				kernel_h: 3
+				kernel_w: 5
+			        pad_w: 2
+                                pad_h: 1
+
+                               	stride:1
+				group: 2
+			}
+		}
+ 
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+
+layer{
+	name: "inception2-3"
+	type: "Inception"
+	bottom: "inception2-2"
+	top: "inception2-3"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+		 
+		inception_column{
+			column_name: "3x5"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 96
+				kernel_h: 3
+				kernel_w: 5
+                                pad_w: 2
+                                pad_h: 1
+
+				stride:1
+				group: 2
+			}
+		}
+ 
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+ 
+########### scale_base: 0.6  use inception2-1 #########
+
+layer{
+	name: "inception2-1-reduce"
+	type: "Convolution"
+	bottom: "inception2-1"
+	top: "inception2-1-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "inception1-reduce"
+	type: "Convolution"
+	bottom: "inception1"
+	top: "inception1-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "inception-scale-1"
+	type: "Concat"
+	bottom: "inception2-1-reduce"
+	bottom: "inception1-reduce"
+	top: "inception-scale-1"
+}
+
+layer { 
+  bottom: "inception-scale-1"
+  top: "inception-scale-1"
+  name: "relu-inception-scale-1"
+  type: "ReLU"
+}
+
+layer{
+	type: "Resize"
+	name: "inception2-1-resize"
+	bottom: "inception-scale-1"
+	top: "inception2-1-resize"
+	resize_param{
+		is_pyramid_test: true
+		out_height_scale: 2
+		out_width_scale: 2
+	}
+}
+
+layer{
+	type: "Convolution"
+	name: "conv-fc-scale-1"
+	bottom: "inception2-1-resize"
+	top: "conv-fc-scale-1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 128
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+ 
+layer{
+	type: "Convolution"
+	name: "conv-out-scale-1"
+	bottom: "conv-fc-scale-1"
+	top: "conv-out-scale-1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 5
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+        # type: "gaussian"
+        # std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "slice-scale-1"
+	type: "Slice"
+	bottom: "conv-out-scale-1"
+	top: "score-scale-1"
+	top: "bbox-scale-1"
+	slice_param{
+		slice_point: 1
+	}
+}
+
+layer{
+	name:"score-mining-scale-1"
+	type:"LabelRelatedDropout"
+	bottom: "score-scale-1"
+	bottom: "label-s1-score"
+	bottom: "label-s1-ignore"
+	top: "score-neg-mining-s1"
+	label_related_dropout_param{
+		negative_ratio : 0.5
+        hard_ratio: 0.5
+		margin: 1
+		ignore_largest_n: 0
+	}
+}
+
+layer{
+	name:"bbox-mining-scale-1"
+	type:"LabelRelatedDropout"
+	bottom: "bbox-scale-1"
+	bottom: "label-s1-bbox"
+	top: "bbox-neg-mining-s1"
+	label_related_dropout_param{
+		negative_ratio : 0 
+        hard_ratio: 0 
+		margin: 0
+	}
+}
+
+layer {
+	name:"score-loss-scale-1"
+	type: "ElementHingeLoss"
+	bottom: "score-neg-mining-s1"
+	bottom: "label-s1-score"
+	top: "score-loss-scale-1"
+	loss_param{
+		normalize_per_positive: true
+		label_bottom_id: 1
+	}
+}
+
+layer {
+	name:"bbox-loss-scale-1"
+	type: "EuclideanLoss"
+	bottom: "bbox-neg-mining-s1"
+	bottom: "label-s1-bbox"
+	top: "bbox-loss-scale-1"
+	loss_weight: 3   # 0.01/(0.6^2)
+	loss_param{
+		normalize_per_positive: true
+		label_bottom_id: 1
+		scale: 0.1333
+	}
+}
+
+
+########### scale_base: 0.84 use inception2-2 #########
+
+layer{
+	name: "inception2-2-reduce"
+	type: "Convolution"
+	bottom: "inception2-2"
+	top: "inception2-2-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	name: "inception-scale-2"
+	type: "Concat"
+	bottom: "inception2-2-reduce"
+	bottom: "inception1-reduce"
+	top: "inception-scale-2"
+}
+
+layer { 
+  bottom: "inception-scale-2"
+  top: "inception-scale-2"
+  name: "relu-inception-scale-2"
+  type: "ReLU"
+}
+
+layer{
+	type: "Resize"
+	name: "inception2-2-resize"
+	bottom: "inception-scale-2"
+	top: "inception2-2-resize"
+	resize_param{
+		is_pyramid_test: true
+		out_height_scale: 2
+		out_width_scale: 2
+	}
+}
+
+layer{
+	type: "Convolution"
+	name: "conv-fc-scale-2"
+	bottom: "inception2-2-resize"
+	top: "conv-fc-scale-2"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 128
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+ 
+layer{
+	type: "Convolution"
+	name: "conv-out-scale-2"
+	bottom: "conv-fc-scale-2"
+	top: "conv-out-scale-2"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 5
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+        # type: "gaussian"
+        # std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "slice-scale-2"
+	type: "Slice"
+	bottom: "conv-out-scale-2"
+	top: "score-scale-2"
+	top: "bbox-scale-2"
+	slice_param{
+		slice_point: 1
+	}
+}
+
+layer{
+	name:"score-mining-scale-2"
+	type:"LabelRelatedDropout"
+	bottom: "score-scale-2"
+	bottom: "label-s2-score"
+	bottom: "label-s2-ignore"
+	top: "score-neg-mining-s2"
+	label_related_dropout_param{
+		negative_ratio : 0.5
+        hard_ratio: 0.5
+		margin: 1
+		ignore_largest_n: 0
+	}
+}
+
+layer{
+	name:"bbox-mining-scale-2"
+	type:"LabelRelatedDropout"
+	bottom: "bbox-scale-2"
+	bottom: "label-s2-bbox"
+	top: "bbox-neg-mining-s2"
+	label_related_dropout_param{
+		negative_ratio : 0 
+        hard_ratio: 0 
+		margin: 0
+	}
+}
+
+layer {
+	name:"score-loss-scale-2"
+	type: "ElementHingeLoss"
+	bottom: "score-neg-mining-s2"
+	bottom: "label-s2-score"
+	top: "score-loss-scale-2"
+	loss_param{
+		normalize_per_positive: true
+		label_bottom_id: 1
+	}
+}
+
+layer {
+	name:"bbox-loss-scale-2"
+	type: "EuclideanLoss"
+	bottom: "bbox-neg-mining-s2"
+	bottom: "label-s2-bbox"
+	top: "bbox-loss-scale-2"
+	loss_weight:  3  #0.01/(0.84^2)
+	loss_param{
+		normalize_per_positive: true
+		label_bottom_id: 1
+		scale: 0.0952
+	}
+}
+
+########### scale_base: 1 use inception2-3 #########
+
+layer{
+	name: "inception2-3-reduce"
+	type: "Convolution"
+	bottom: "inception2-3"
+	top: "inception2-3-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	name: "inception-scale-3"
+	type: "Concat"
+	bottom: "inception2-3-reduce"
+	bottom: "inception1-reduce"
+	top: "inception-scale-3"
+}
+
+layer { 
+  bottom: "inception-scale-3"
+  top: "inception-scale-3"
+  name: "relu-inception-scale-3"
+  type: "ReLU"
+}
+
+layer{
+	type: "Resize"
+	name: "inception2-3-resize"
+	bottom: "inception-scale-3"
+	top: "inception2-3-resize"
+	resize_param{
+		is_pyramid_test: true
+		out_height_scale: 2
+		out_width_scale: 2
+	}
+}
+
+layer{
+	type: "Convolution"
+	name: "conv-fc-scale-3"
+	bottom: "inception2-3-resize"
+	top: "conv-fc-scale-3"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 128
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+ 
+layer{
+	type: "Convolution"
+	name: "conv-out-scale-3"
+	bottom: "conv-fc-scale-3"
+	top: "conv-out-scale-3"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 5
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+        # type: "gaussian"
+        # std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "slice-scale-3"
+	type: "Slice"
+	bottom: "conv-out-scale-3"
+	top: "score-scale-3"
+	top: "bbox-scale-3"
+	slice_param{
+		slice_point: 1
+	}
+}
+
+layer{
+	name:"score-mining-scale-3"
+	type:"LabelRelatedDropout"
+	bottom: "score-scale-3"
+	bottom: "label-s3-score"
+	bottom: "label-s3-ignore"
+	top: "score-neg-mining-s3"
+	label_related_dropout_param{
+		negative_ratio : 0.5
+        hard_ratio: 0.5
+		margin: 1
+		ignore_largest_n: 0
+	}
+}
+
+layer{
+	name:"bbox-mining-scale-3"
+	type:"LabelRelatedDropout"
+	bottom: "bbox-scale-3"
+	bottom: "label-s3-bbox"
+	top: "bbox-neg-mining-s3"
+	label_related_dropout_param{
+		negative_ratio : 0 
+        hard_ratio: 0 
+		margin: 0
+	}
+}
+
+layer {
+	name:"score-loss-scale-3"
+	type: "ElementHingeLoss"
+	bottom: "score-neg-mining-s3"
+	bottom: "label-s3-score"
+	top: "score-loss-scale-3"
+	loss_param{
+		normalize_per_positive: true
+		label_bottom_id: 1
+	}
+}
+
+layer {
+	name:"bbox-loss-scale-3"
+	type: "EuclideanLoss"
+	bottom: "bbox-neg-mining-s3"
+	bottom: "label-s3-bbox"
+	top: "bbox-loss-scale-3"
+	loss_weight: 3
+	loss_param{
+		normalize_per_positive: true
+		label_bottom_id: 1
+		scale: 0.08
+	}
+}

@@ -1,0 +1,152 @@
+syntax = "proto2";
+package caffe_fcn_data_layer;
+
+// Please find the comments for variables in .hpp file. 
+message FCNImageDataSourceParameter{
+	optional string  pos_samples_source = 1;
+	optional string  pos_img_folder = 9;
+	optional string  neg_samples_source = 2;
+	optional string  neg_img_folder = 10;
+	optional float   neg_ratio = 3 [default = 0.5];
+	optional uint32  batch_size = 5 [default = 1];
+	optional bool    shuffle = 6 [default = true ];
+	optional float   bootstrap_hard_ratio = 4 [default = 0.5];
+    enum STDLengthType {
+      HEIGHT = 0;
+      WIDTH = 1;
+	  DIAG = 2;
+    }
+	optional STDLengthType bootstrap_std_length_type = 7 [default = HEIGHT];
+	optional float bootstrap_std_length = 8 [default = 0];
+	optional bool multi_class_sample_balance = 11 [default = false];
+	optional bool no_expand_pos_anno = 12 [default = false];
+	optional string   roi_samples_source = 14;
+}
+
+message FCNImageDataReaderParameter{
+	optional float   scale_lower_limit = 1 [default = 1];
+	optional float   scale_upper_limit = 2 [default = 1];
+	optional uint32  roi_center_point = 3; 
+	optional uint32  standard_len_point_1 = 4  ;
+	optional uint32  standard_len_point_2 = 5  ;
+	optional uint32  standard_len = 6   ;
+    optional float   mean_r = 7 [default = 0];
+    optional float   mean_g = 8 [default = 0];
+    optional float   mean_b = 9 [default = 0];
+	
+    optional float   mean2_r = 21 [default = 0];
+    optional float   mean2_g = 22 [default = 0];
+    optional float   mean2_b = 23 [default = 0];
+	
+	
+	optional float   random_rotate_degree = 10 [default = 0];
+	optional float   coord_jitter = 11 [default = 0];  
+	optional float   random_roi_prob = 12 [default = 0] ; 
+	
+	optional bool    use_gpu = 25 [default = false];
+	optional bool    need_buffer= 26 [default = true];
+	
+	optional bool    is_video_img = 27 [default = false];
+	optional string  video_cache_path = 28 [default = "./cache/"];
+	
+	optional bool    is_img_pair = 14 [default = false];
+ 	optional string  img_pair_postfix = 16 [default = "_depth"];
+	
+	optional uint32  min_valid_standard_len = 17 [default = 6]  ;
+	
+	
+	optional bool    restrict_roi_in_center = 18 [default = false];
+}
+
+
+message FCNImageDataCommonParameter{
+	enum ScaleChooseStrategy{
+		RANDOM = 0 ;
+		WEIGHTED = 1 ;
+	}
+	optional ScaleChooseStrategy scale_choose_strategy = 1 [default = WEIGHTED];
+	repeated float   scale_base = 2 ;
+	optional float   scale_positive_upper_bounder = 12 [default = 1.2];
+	optional float   scale_positive_lower_bounder = 13 [default = 0.8];
+	optional float   scale_ignore_upper_bounder = 14 [default = 1.2];
+	optional float   scale_ignore_lower_bounder = 15 [default = 0.8];
+	optional uint32  input_height = 3 [default = 0];
+	optional uint32  input_width = 4 [default = 0];
+	optional uint32  heat_map_a = 5 [default = 0];
+	optional uint32  heat_map_b = 6 [default = 0];
+	optional uint32  out_height = 7 [default = 0];
+	optional uint32  out_width = 8 [default = 0];
+ 	optional uint32  num_anno_points_per_instance = 9;
+	optional bool    single_thread = 11 [default = true];
+}
+
+
+message FCNImageDataKeyPointParameter{
+	optional uint32  key_point_valid_distance = 1 [default = 6];
+	optional uint32  key_point_min_out_valid_len = 4 [default = 1]; 
+	optional string  used_key_points_file = 9 ;
+	optional uint32  ignore_flag_radius = 2 [default = 20];
+	optional string  ignore_flag_list_file = 3 ;
+	optional bool    need_point_loc_diff = 5 [default = false];
+	optional uint32  key_point_loc_diff_radius = 6 [default = 6]; 
+	
+	optional uint32  key_point_standard_point_id1 = 11 ;
+	optional uint32  key_point_standard_point_id2 = 12 ;
+	optional uint32  key_point_standard_length = 13;
+	optional uint32  object_center_point_id = 14;
+	
+	optional string  attribute_point_files = 15;
+	
+}
+
+
+message FCNImageDataBoxNormParameter{
+	optional uint32  bbox_height = 10 [default = 50];
+	optional uint32  bbox_width = 11 [default = 50];
+    enum BBoxSizeNormType {
+      HEIGHT = 0;
+      WIDTH = 1;
+	  DIAG = 2;
+    }
+	optional BBoxSizeNormType bbox_size_norm_type = 9 [default = HEIGHT];
+}
+
+message FCNImageDataDetectionBoxParameter{
+	optional uint32  min_output_pos_radius = 1 [default = 1]; 
+	optional bool    need_detection_loc_diff = 2 [default = false];
+	optional uint32  bbox_height = 10 [default = 50];   //
+	optional uint32  bbox_width = 11 [default = 50];
+    enum BBoxSizeNormType {
+      HEIGHT = 0;
+      WIDTH = 1;
+	  DIAG = 2;
+    }
+	optional BBoxSizeNormType bbox_size_norm_type = 9 [default = HEIGHT];
+	repeated uint32  bbox_point_id = 4;
+	optional float   bbox_valid_dist_ratio = 5 [default = 0.6];
+	optional float   bbox_loc_diff_valid_dist_ratio = 6 [default = 0.5];
+	optional string  list_point_diff_from_center = 7 ;
+	optional string  list_point_ignore_flag_diff_from_center = 16 ;
+	optional uint32  ignore_margin = 8 [default = 3];
+	
+	optional bool    loc_regress_on_ignore = 14 [default = true];
+	optional uint32  class_flag_id = 12;
+	optional uint32  total_class_num = 13 [default = 1];
+	optional float   ignore_class_flag_id = 15 [default = -1]; 
+}
+message FCNImageDataIgnoreBoxParameter{
+	optional uint32  ignore_box_flag_id = 1 [default = 1000];
+	repeated uint32  ignore_box_point_id = 2 ;
+}
+
+
+message FCNImageDataParameter{
+	optional FCNImageDataCommonParameter       fcn_image_data_common_param = 1;
+	optional FCNImageDataKeyPointParameter     fcn_image_data_key_point_param = 2;
+	optional FCNImageDataDetectionBoxParameter fcn_image_data_detection_box_param = 3;
+	optional FCNImageDataIgnoreBoxParameter    fcn_image_data_ignore_box_param = 4;
+	optional FCNImageDataSourceParameter       fcn_image_data_source_param = 5;
+	optional FCNImageDataReaderParameter       fcn_image_data_reader_param = 6;
+}
+
+

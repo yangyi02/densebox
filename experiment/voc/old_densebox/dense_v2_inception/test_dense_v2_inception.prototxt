@@ -1,0 +1,685 @@
+name: "CaffeNet"
+layer  {
+  name: "data"
+  type: "PyramidImageData"
+  top: "data"
+  top: "data-param"
+  pyramid_data_param{
+    image_list_file: "/home/vis/huanglichao/dataset/VOC/annotations/2007_test_list.txt"
+  	image_folder: "/home/vis/huanglichao/dataset/VOC/2007_img/"
+
+	scale_start: -3 #-3 #-2.5
+	scale_end: 0.6
+	scale_step: 0.5
+
+	heat_map_a: 4
+	heat_map_b: 2
+	mean_r: 114.3750
+    mean_g: 108.3747
+    mean_b: 99.9598
+	max_block_num: 20
+	shuffle: false
+
+	block_packing_param{
+		max_stride: 8
+		pad_h:  24 #32
+		pad_w: 24 #32
+		max_block_size: 700
+	}
+  }
+}
+
+layer{
+	name: "mvn_data"
+	type: "Power"
+	bottom: "data"
+	top: "mvn_data"
+	power_param{
+		power: 1
+		scale: 0.01
+		shift: 0
+	}
+}
+
+########### vgg 16 start #########
+
+layer{
+	name: "conv1"
+	type: "Convolution"
+	bottom: "mvn_data"
+	top: "conv1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 7
+	  pad: 3
+      stride: 4
+      weight_filler {
+        type: "xavier"
+
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer {
+  bottom: "conv1"
+  top: "conv1"
+  name: "relu1"
+  type: "ReLU"
+}
+
+
+
+
+layer{
+	name: "inception1"
+	type: "Inception"
+	bottom: "conv1"
+	top: "inception1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+
+		inception_column{
+			column_name: "3x3"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 72
+				kernel_size: 3
+                pad: 1
+				stride:2
+			}
+		}
+		inception_column{
+			column_name: "5x5"
+			convolution_param{
+				num_output: 16
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 32
+				kernel_size: 5
+                pad: 2
+				stride:2
+			}
+		}
+
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+
+layer  {
+  bottom: "inception1"
+  top: "pool2"
+  name: "pool2"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 1
+	pad: 1
+  }
+}
+
+
+layer{
+	name: "inception2-1"
+	type: "Inception"
+	bottom: "pool2"
+	top: "inception2-1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+
+		inception_column{
+			column_name: "3x5"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 96
+				kernel_h: 3
+				kernel_w: 5
+                pad_h: 1
+                pad_w: 2
+				stride:1
+				group: 2
+			}
+		}
+
+
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+layer{
+	name: "inception2-2"
+	type: "Inception"
+	bottom: "inception2-1"
+	top: "inception2-2"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+
+		inception_column{
+			column_name: "3x5"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 96
+				kernel_h: 3
+				kernel_w: 5
+                pad_h: 1
+                pad_w: 2
+
+				stride:1
+				group: 2
+			}
+		}
+
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+
+layer{
+	name: "inception2-3"
+	type: "Inception"
+	bottom: "inception2-2"
+	top: "inception2-3"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+	inception_param{
+		need_relu: true
+		relu_at_top: true
+
+		inception_column{
+			column_name: "3x5"
+			convolution_param{
+				num_output: 48
+				kernel_size: 1
+			}
+			convolution_param{
+				num_output: 96
+				kernel_h: 3
+				kernel_w: 5
+                pad_h: 1
+                pad_w: 2
+
+				stride:1
+				group: 2
+			}
+		}
+
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+}
+
+########### scale_base: 0.6  use inception2-1 #########
+
+layer{
+	name: "inception2-1-reduce"
+	type: "Convolution"
+	bottom: "inception2-1"
+	top: "inception2-1-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "inception1-reduce"
+	type: "Convolution"
+	bottom: "inception1"
+	top: "inception1-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+layer{
+	name: "inception-scale-1"
+	type: "Concat"
+	bottom: "inception2-1-reduce"
+	bottom: "inception1-reduce"
+	top: "inception-scale-1"
+}
+
+layer {
+  bottom: "inception-scale-1"
+  top: "inception-scale-1"
+  name: "relu-inception-scale-1"
+  type: "ReLU"
+}
+
+layer{
+	type: "DenseResize"
+	name: "inception2-1-resize"
+	bottom: "inception-scale-1"
+	top: "inception2-1-resize"
+	dense_resize_param{
+		is_pyramid_test: true
+		out_height_scale: 2
+		out_width_scale: 2
+	}
+}
+
+layer{
+	type: "Convolution"
+	name: "conv-fc-scale-1"
+	bottom: "inception2-1-resize"
+	top: "conv-fc-scale-1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 128
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	type: "Convolution"
+	name: "conv-out-scale-1"
+	bottom: "conv-fc-scale-1"
+	top: "conv-out-scale-1"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 100
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+        # type: "gaussian"
+        # std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+########### scale_base: 0.84 use inception2-2 #########
+
+layer{
+	name: "inception2-2-reduce"
+	type: "Convolution"
+	bottom: "inception2-2"
+	top: "inception2-2-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	name: "inception-scale-2"
+	type: "Concat"
+	bottom: "inception2-2-reduce"
+	bottom: "inception1-reduce"
+	top: "inception-scale-2"
+}
+
+layer {
+  bottom: "inception-scale-2"
+  top: "inception-scale-2"
+  name: "relu-inception-scale-2"
+  type: "ReLU"
+}
+
+layer{
+	type: "DenseResize"
+	name: "inception2-2-resize"
+	bottom: "inception-scale-2"
+	top: "inception2-2-resize"
+	dense_resize_param{
+		is_pyramid_test: true
+		out_height_scale: 2
+		out_width_scale: 2
+	}
+}
+
+layer{
+	type: "Convolution"
+	name: "conv-fc-scale-2"
+	bottom: "inception2-2-resize"
+	top: "conv-fc-scale-2"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 128
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	type: "Convolution"
+	name: "conv-out-scale-2"
+	bottom: "conv-fc-scale-2"
+	top: "conv-out-scale-2"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 100
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+        # type: "gaussian"
+        # std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+
+########### scale_base: 1 use inception2-3 #########
+
+layer{
+	name: "inception2-3-reduce"
+	type: "Convolution"
+	bottom: "inception2-3"
+	top: "inception2-3-reduce"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 64
+      kernel_size: 1
+	  pad: 0
+      stride: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	name: "inception-scale-3"
+	type: "Concat"
+	bottom: "inception2-3-reduce"
+	bottom: "inception1-reduce"
+	top: "inception-scale-3"
+}
+
+layer {
+  bottom: "inception-scale-3"
+  top: "inception-scale-3"
+  name: "relu-inception-scale-3"
+  type: "ReLU"
+}
+
+layer{
+	type: "DenseResize"
+	name: "inception2-3-resize"
+	bottom: "inception-scale-3"
+	top: "inception2-3-resize"
+	dense_resize_param{
+		is_pyramid_test: true
+		out_height_scale: 2
+		out_width_scale: 2
+	}
+}
+
+layer{
+	type: "Convolution"
+	name: "conv-fc-scale-3"
+	bottom: "inception2-3-resize"
+	top: "conv-fc-scale-3"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 128
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	type: "Convolution"
+	name: "conv-out-scale-3"
+	bottom: "conv-fc-scale-3"
+	top: "conv-out-scale-3"
+    param{
+    	lr_mult: 1
+  		decay_mult: 1
+    }
+    param{
+    	lr_mult: 2
+  		decay_mult: 0
+    }
+    convolution_param {
+      num_output: 100
+      kernel_size: 1
+      weight_filler {
+        type: "xavier"
+        # type: "gaussian"
+        # std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+}
+
+
+layer{
+	type: "Concat"
+	name: "concat_all"
+	bottom: "conv-out-scale-1"
+	bottom: "conv-out-scale-2"
+	bottom: "conv-out-scale-3"
+
+	top: "res_all"
+}
+
+layer{
+	type: "DenseDetectionOutput"
+	name: "detection-output"
+	bottom: "res_all"
+	bottom: "data-param"
+	dense_detection_output_param{
+		threshold: 0.5
+		channel_per_scale: 100
+		num_class: 20
+		class_name_list: "/home/vis/huanglichao/dataset/VOC/annotations/class_list.txt"
+		nms_param{
+			overlap_ratio: 0.5
+			top_n: 100
+		}
+	}
+}

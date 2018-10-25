@@ -1,0 +1,1 @@
+CAFFE_ROOT='/home/vis/hy/caffe_densebox/'
